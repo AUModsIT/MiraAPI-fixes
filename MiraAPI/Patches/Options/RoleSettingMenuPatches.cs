@@ -152,7 +152,7 @@ public static class RoleSettingMenuPatches
             }
 
             Info($"Created {num3} role options for the default game.");
-            yield return null;
+            yield break;
         }
 
         ScrollerNum = 0.522f;

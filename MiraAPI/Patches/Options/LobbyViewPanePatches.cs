@@ -109,7 +109,7 @@ public static class LobbyViewPanePatches
     private static void Refresh(LobbyViewSettingsPane menu)
     {
         ModifiersTabButton?.gameObject.SetActive(SelectedModIdx != 0);
-        menu.gameModeText.text = SelectedMod?.PluginInfo.Metadata.Name ?? "Default";
+        menu.gameModeText.text = SelectedMod?.PluginInfo.Metadata.Name ?? "Main";
         menu.RefreshTab();
         menu.scrollBar.ScrollToTop();
     }
