@@ -9,6 +9,11 @@ namespace MiraAPI.PluginLoading;
 public interface IMiraPlugin
 {
     /// <summary>
+    /// Gets or sets a value indicating whether to display the plugin in the options menu.
+    /// </summary>
+    public virtual bool DisplayOnOptionsMenu => true;
+
+    /// <summary>
     /// Gets the name to display on the options menu.
     /// </summary>
     string OptionsTitleText { get; }

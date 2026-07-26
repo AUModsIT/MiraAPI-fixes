@@ -25,7 +25,7 @@ public static class LobbyViewPanePatches
 
     private static MiraPluginInfo? SelectedMod => SelectedModIdx == 0
         ? null
-        : MiraPluginManager.Instance.RegisteredPlugins[SelectedModIdx - 1];
+        : MiraPluginManager.Instance.RegisteredOptionablePlugins[SelectedModIdx - 1];
 
     private static PassiveButton? ModifiersTabButton { get; set; }
 
@@ -75,7 +75,7 @@ public static class LobbyViewPanePatches
             (UnityAction)(() =>
             {
                 SelectedModIdx += 1;
-                if (SelectedModIdx > MiraPluginManager.Instance.RegisteredPlugins.Length)
+                if (SelectedModIdx > MiraPluginManager.Instance.RegisteredOptionablePlugins.Length)
                 {
                     SelectedModIdx = 0;
                 }
@@ -99,7 +99,7 @@ public static class LobbyViewPanePatches
                 SelectedModIdx -= 1;
                 if (SelectedModIdx < 0)
                 {
-                    SelectedModIdx = MiraPluginManager.Instance.RegisteredPlugins.Length;
+                    SelectedModIdx = MiraPluginManager.Instance.RegisteredOptionablePlugins.Length;
                 }
 
                 Refresh(__instance);
