@@ -65,7 +65,7 @@ public static class CustomGameModeManager
     /// <summary>
     /// Gets the current gamemode.
     /// </summary>
-    public static AbstractGameMode? ActiveMode { get; internal set; }
+    public static AbstractGameMode? ActiveMode { get; private set; }
 
     /// <summary>
     /// Gets a gamemode from an ID.
