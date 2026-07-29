@@ -1,21 +1,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
+using Hazel;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Il2CppSystem;
 using MiraAPI.GameOptions;
+using MiraAPI.Networking;
 using MiraAPI.Patches.GameModes;
 using MiraAPI.Patches.Options;
-using MiraAPI.Presets;
 using MiraAPI.Utilities;
 using MiraAPI.Utilities.Assets;
 using Reactor.Localization.Utilities;
+using Reactor.Networking.Attributes;
+using Reactor.Networking.Rpc;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.ProBuilder;
-using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace MiraAPI.GameModes;
@@ -29,15 +31,17 @@ public static class GameModeOption
     /// <summary>
     /// Gets or Sets the current index of the Game Mode Option
     /// For the value as an AbstractGameMode, see CustomGameModeManager.ActiveMode
+    /// For the value as an AbstractGameMode, see CustomGameModeManager.ActiveMode.
     /// </summary>
     public static int Value
     {
         get =>
             OptionBehaviour != null
                 ? OptionBehaviour.GetInt()
-                : 0;
+                : _lastValue;
         set
         {
+            _lastValue = value;
             if (OptionBehaviour == null)
                 return;
             OptionBehaviour.Value = value;
@@ -121,16 +125,22 @@ public static class GameModeOption
         setting.Type = OptionTypes.MultipleChoice;
         setting.Title = GamemodeName;
         setting.Index = _lastValue;
+        Set(_lastValue);
+        __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
         setting.Values = new Il2CppStructArray<StringNames>([Values[0]]);
         OptionBehaviour.SetUpFromData(setting, 20);
         OptionBehaviour.TitleText.fontSize = 3;
         OptionBehaviour.OnValueChanged = (Action<OptionBehaviour>) ((OptionBehaviour opt) =>
         {
             _lastValue = opt.GetInt();
-            CustomGameModeManager.SetGameMode((uint)_lastValue);
-            HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).Name);
-            // could make Values a dict of AbstractGameMode to 
+            Set(opt.GetInt());
             __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
+            foreach (var player in PlayerControl.AllPlayerControls)
+            {
+                if (player == PlayerControl.LocalPlayer)
+                    continue;
+                Rpc<GameModeOptionUpdateRpc>.Instance.SendTo(player.OwnerId, _lastValue);
+            }
         });
         foreach (var optionBehaviour in __instance.Children.ToArray().Skip(1))
         {
@@ -142,6 +152,14 @@ public static class GameModeOption
         for (var i = 1; i < Values.Count; i++)
             OptionBehaviour.Values = (Il2CppStructArray<StringNames>)OptionBehaviour.Values.Add(Values.ElementAt(i).Value);
         __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
+    }
+
+    private static void Set(int val)
+    {
+        _lastValue = val;
+        CustomGameModeManager.SetGameMode((uint)_lastValue);
+        HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).Name);
+        // could make Values a dict of AbstractGameMode too
     }
 
     private static void RefreshOptions(this GameOptionsMenu instance, AbstractGameMode mode)
@@ -172,7 +190,9 @@ public static class GameModeOption
             ModdedOptionsManager.GameModeOptionGroups
                 .Where(x => x.Key == mode.GetType()).Select(y => y.Value).SelectMany(y => y) ?? [];
 
-        foreach (var group in filteredGroups)
+        var optionGroups = filteredGroups.ToList();
+        var abstractOptionGroups = filteredGroups as AbstractOptionGroup[] ?? optionGroups.ToArray();
+        foreach (var group in abstractOptionGroups)
         {
             CreateGroup(instance, group);
         }
@@ -194,10 +214,10 @@ public static class GameModeOption
             }
         }
 
-        if (filteredGroups.Any())
+        if (optionGroups.Count != 0)
         {
             num += 0.225f;
-            foreach (var group in filteredGroups)
+            foreach (var group in optionGroups)
             {
                 GameOptionsMenuPatch.UpdateGroup(group, ref num);
             }
@@ -400,5 +420,25 @@ public static class GameModeOption
                 menu.RefreshOptions(CustomGameModeManager.ActiveMode!);
             }));
         headerBtn.SetButtonEnableState(true);
+    }
+
+    [RegisterCustomRpc((uint)MiraRpc.SyncGamemodeOption)]
+    private sealed class GameModeOptionUpdateRpc(MiraApiPlugin plugin, uint id) : PlayerCustomRpc<MiraApiPlugin, int>(plugin, id)
+    {
+        public override RpcLocalHandling LocalHandling => RpcLocalHandling.Before;
+        public override void Write(MessageWriter writer, int data)
+        {
+            writer.Write(data);
+        }
+
+        public override int Read(MessageReader reader)
+        {
+            return reader.ReadInt32();
+        }
+
+        public override void Handle(PlayerControl innerNetObject, int data)
+        {
+            Value = data;
+        }
     }
 }
