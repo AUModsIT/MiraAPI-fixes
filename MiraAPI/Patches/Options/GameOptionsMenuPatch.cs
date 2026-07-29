@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Linq;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HarmonyLib;
 using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
@@ -34,6 +36,13 @@ internal static class GameOptionsMenuPatch
     }
 
     [HarmonyPostfix]
+    [HarmonyPatch(nameof(GameOptionsMenu.CloseMenu))]
+    public static void FullMenuClosePatch(GameOptionsMenu __instance)
+    {
+        Utilities.Extensions.ClearGarbageCollector();
+    }
+
+    [HarmonyPostfix]
     [HarmonyPatch(nameof(GameOptionsMenu.Update))]
     // ReSharper disable once InconsistentNaming
     public static void UpdatePatch(GameOptionsMenu __instance)
@@ -61,7 +70,7 @@ internal static class GameOptionsMenuPatch
             var filteredGroups =
                 GameSettingMenuPatches.SelectedMod?.InternalOptionGroups
                     .Where(x => x.OptionableType == null &&
-                                !x.ShowInModifiersMenu && x.ParentMenu == MenuCategory.Roles) ?? [];
+                                x.ParentMenu == MenuCategory.Game) ?? [];
 
             foreach (var group in filteredGroups)
             {
@@ -72,9 +81,9 @@ internal static class GameOptionsMenuPatch
         __instance.scrollBar.SetYBoundsMax(-num - 1.65f);
     }
 
-    internal static void UpdateGroup(AbstractOptionGroup group, ref float num)
+    internal static void UpdateGroup(AbstractOptionGroup? group, ref float num)
     {
-        if (group.Options.Count == 0 || group.Header is null)
+        if (group is null || group.Options.Count == 0 || group.Header is null || group.CreationCoroutine is not null)
         {
             return;
         }
@@ -100,7 +109,7 @@ internal static class GameOptionsMenuPatch
         {
             var newOpt = opt.OptionBehaviour;
 
-            if (newOpt is null)
+            if (!newOpt || newOpt == null)
             {
                 continue;
             }
@@ -169,7 +178,8 @@ internal static class GameOptionsMenuPatch
     private static void ModifiersUpdate(ref float num)
     {
         var groups = GameSettingMenuPatches.SelectedMod?.InternalOptionGroups
-            .Where(x => x.ShowInModifiersMenu || x.OptionableType?.IsAssignableTo(typeof(BaseModifier)) == true) ?? [];
+            .Where(x => x.ParentMenu is MenuCategory.Modifiers ||
+                        x.OptionableType?.IsAssignableTo(typeof(BaseModifier)) == true) ?? [];
 
         foreach (var modGroup in groups)
         {
@@ -180,7 +190,8 @@ internal static class GameOptionsMenuPatch
     private static void ModifiersCreate(GameOptionsMenu menu)
     {
         var groups = GameSettingMenuPatches.SelectedMod?.InternalOptionGroups
-            .Where(x => x.ShowInModifiersMenu || x.OptionableType?.IsAssignableTo(typeof(BaseModifier)) == true) ?? [];
+            .Where(x => x.ParentMenu is MenuCategory.Modifiers ||
+                        x.OptionableType?.IsAssignableTo(typeof(BaseModifier)) == true) ?? [];
         foreach (var group in groups)
         {
             CreateGroup(menu, group);
@@ -199,24 +210,21 @@ internal static class GameOptionsMenuPatch
 
         __instance.MapPicker.gameObject.SetActive(false);
 
-        if (__instance.name == "MODIFIERS TAB")
+        switch (__instance.name)
         {
-            ModifiersCreate(__instance);
-            return false;
-        }
-        else if (__instance.name == "CUSTOM TAB 1")
-        {
-            CustomMenuOneCreate(__instance);
-            return false;
-        }
-        else if (__instance.name == "CUSTOM TAB 2")
-        {
-            CustomMenuTwoCreate(__instance);
-            return false;
+            case "MODIFIERS TAB":
+                ModifiersCreate(__instance);
+                return false;
+            case "CUSTOM TAB 1":
+                CustomMenuOneCreate(__instance);
+                return false;
+            case "CUSTOM TAB 2":
+                CustomMenuTwoCreate(__instance);
+                return false;
         }
 
         var filteredGroups = GameSettingMenuPatches.SelectedMod?.InternalOptionGroups
-            .Where(x => x.OptionableType == null && !x.ShowInModifiersMenu && x.ParentMenu == MenuCategory.Roles) ?? [];
+            .Where(x => x.OptionableType == null && x.ParentMenu == MenuCategory.Game) ?? [];
 
         foreach (var group in filteredGroups)
         {
@@ -262,7 +270,7 @@ internal static class GameOptionsMenuPatch
         return false;
     }
 
-    private static void CreateGroup(GameOptionsMenu menu, AbstractOptionGroup group)
+    private static IEnumerator CoCreateGroup(GameOptionsMenu menu, AbstractOptionGroup group)
     {
         var categoryHeaderMasked = Object.Instantiate(
             menu.categoryHeaderOrigin,
@@ -309,7 +317,7 @@ internal static class GameOptionsMenuPatch
             defaultPreset = preset;
         }
 
-        foreach (var newOpt in options)
+        yield return options.CoLoopWithBudget(newOpt =>
         {
             newOpt.SetClickMask(menu.ButtonClickMask);
 
@@ -412,6 +420,7 @@ internal static class GameOptionsMenuPatch
                         defaultPreset!.ResetOption(strOpt);
                     }));
             }
+
             if (!defaultPreset!.IsOptionInPreset(newOpt))
             {
                 resetBtn.Destroy();
@@ -419,7 +428,7 @@ internal static class GameOptionsMenuPatch
 
             newOpt.Initialize();
             newOpt.gameObject.SetActive(false);
-        }
+        }).WrapToIl2Cpp();
 
         var boxCol = categoryHeaderMasked.gameObject.AddComponent<BoxCollider2D>();
         boxCol.size = new Vector2(7, 0.7f);
@@ -438,5 +447,17 @@ internal static class GameOptionsMenuPatch
                     : "<size=70%>(Click to close)</size>";
             }));
         headerBtn.SetButtonEnableState(true);
+
+        group.CreationCoroutine = null;
+    }
+
+    private static void CreateGroup(GameOptionsMenu menu, AbstractOptionGroup group)
+    {
+        if (group.CreationCoroutine != null)
+        {
+            GameSettingMenu.Instance.StopCoroutine(group.CreationCoroutine);
+        }
+
+        group.CreationCoroutine = GameSettingMenu.Instance.StartCoroutine(CoCreateGroup(menu, group).WrapToIl2Cpp());
     }
 }

@@ -1,9 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AmongUs.GameOptions;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HarmonyLib;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using MiraAPI.GameModes;
 using MiraAPI.GameOptions;
 using MiraAPI.Networking;
@@ -12,7 +13,6 @@ using MiraAPI.Utilities;
 using MiraAPI.Utilities.Assets;
 using Reactor.Localization.Utilities;
 using Reactor.Networking.Rpc;
-using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
@@ -50,29 +50,45 @@ internal static class RoleSettingMenuPatches
         __instance.scrollBar.SetScrollBounds(__instance);
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(nameof(RolesSettingsMenu.SetQuotaTab))]
-    public static bool SetQuotaTabPatch(RolesSettingsMenu __instance)
+    private static IEnumerator CoQuotaTabPatch(RolesSettingsMenu roleMenu)
     {
-        Headers.ForEach(Object.Destroy);
-        RoleOptionSettings.ForEach(Object.Destroy);
+        foreach (var obj in Headers)
+        {
+            if (!obj)
+            {
+                continue;
+            }
+
+            obj.Destroy();
+        }
+
         Headers.Clear();
+        foreach (var obj in RoleOptionSettings)
+        {
+            if (!obj)
+            {
+                continue;
+            }
+
+            obj.gameObject.Destroy();
+        }
+
         RoleOptionSettings.Clear();
         CurrentRole = null;
         CurrentRoleOptions = null;
 
-        __instance.roleChances = new Il2CppSystem.Collections.Generic.List<RoleOptionSetting>();
-        __instance.advancedSettingChildren = new Il2CppSystem.Collections.Generic.List<OptionBehaviour>();
+        roleMenu.roleChances = new Il2CppSystem.Collections.Generic.List<RoleOptionSetting>();
+        roleMenu.advancedSettingChildren = new Il2CppSystem.Collections.Generic.List<OptionBehaviour>();
 
-        var maskBg = __instance.scrollBar.transform.FindChild("MaskBg");
-        var hitbox = __instance.scrollBar.transform.FindChild("Hitbox");
-        var dividerImage = __instance.transform.FindChild("HeaderButtons/DividerImage");
+        var maskBg = roleMenu.scrollBar.transform.FindChild("MaskBg");
+        var hitbox = roleMenu.scrollBar.transform.FindChild("Hitbox");
+        var dividerImage = roleMenu.transform.FindChild("HeaderButtons/DividerImage");
 
         if (GameSettingMenuPatches.SelectedModIdx == 0)
         {
-            __instance.AllButton.transform.parent.gameObject.SetActive(true);
-            __instance.AllButton.gameObject.SetActive(true);
-            __instance.scrollBar.transform.localPosition = new Vector3(-1.4957f, 0.657f, -4);
+            roleMenu.AllButton.transform.parent.gameObject.SetActive(true);
+            roleMenu.AllButton.gameObject.SetActive(true);
+            roleMenu.scrollBar.transform.localPosition = new Vector3(-1.4957f, 0.657f, -4);
             maskBg.localPosition = new Vector3(1.5353f, -.5734f, -.1f);
             maskBg.localScale = new Vector3(6.6811f, 3.3563f, 0.5598f);
             hitbox.localPosition = new Vector3(0.3297f, -.2333f, 4f);
@@ -81,67 +97,70 @@ internal static class RoleSettingMenuPatches
 
             var num = 0.662f;
 
-            var list = CustomRoleManager.AllRoles.Where(
-                r => !r.IsCustomRole() && !r.IsRoleBlacklisted() && r.TeamType == RoleTeamTypes.Crewmate && r.Role != RoleTypes.Crewmate &&
-                     r.Role != RoleTypes.CrewmateGhost).ToList();
-            var list2 = CustomRoleManager.AllRoles.Where(
-                r => !r.IsCustomRole() && !r.IsRoleBlacklisted() && r.TeamType == RoleTeamTypes.Impostor && r.Role != RoleTypes.Impostor &&
-                     r.Role != RoleTypes.ImpostorGhost).ToList();
+            var list = CustomRoleManager.AllRoles.Where(r =>
+                !r.IsCustomRole() && !r.IsRoleBlacklisted() && r.TeamType == RoleTeamTypes.Crewmate &&
+                r.Role != RoleTypes.Crewmate &&
+                r.Role != RoleTypes.CrewmateGhost).ToList();
+            var list2 = CustomRoleManager.AllRoles.Where(r =>
+                !r.IsCustomRole() && !r.IsRoleBlacklisted() && r.TeamType == RoleTeamTypes.Impostor &&
+                r.Role != RoleTypes.Impostor &&
+                r.Role != RoleTypes.ImpostorGhost).ToList();
 
-            if (__instance.roleTabs == null || __instance.roleTabs.Count == 0)
+            if (roleMenu.roleTabs == null || roleMenu.roleTabs.Count == 0)
             {
                 var num2 = -1.928f;
-                __instance.roleTabs = new();
-                __instance.roleTabs.Add(__instance.AllButton);
+                roleMenu.roleTabs = new();
+                roleMenu.roleTabs.Add(roleMenu.AllButton);
                 foreach (var t in list)
                 {
-                    __instance.AddRoleTab(t, ref num2);
+                    roleMenu.AddRoleTab(t, ref num2);
                 }
 
                 foreach (var t in list2)
                 {
-                    __instance.AddRoleTab(t, ref num2);
+                    roleMenu.AddRoleTab(t, ref num2);
                 }
             }
 
             var categoryHeaderEditRole = Object.Instantiate(
-                __instance.categoryHeaderEditRoleOrigin,
+                roleMenu.categoryHeaderEditRoleOrigin,
                 Vector3.zero,
                 Quaternion.identity,
-                __instance.RoleChancesSettings.transform);
+                roleMenu.RoleChancesSettings.transform);
             categoryHeaderEditRole.SetHeader(StringNames.CrewmateRolesHeader, 20);
             categoryHeaderEditRole.transform.localPosition = new Vector3(4.986f, num, -2f);
             num -= 0.522f;
             var num3 = 0;
             foreach (var t in list)
             {
-                __instance.CreateQuotaOption(t, ref num, num3);
+                roleMenu.CreateQuotaOption(t, ref num, num3);
                 num3++;
             }
 
             num -= 0.22f;
             var categoryHeaderEditRole2 = Object.Instantiate(
-                __instance.categoryHeaderEditRoleOrigin,
+                roleMenu.categoryHeaderEditRoleOrigin,
                 Vector3.zero,
                 Quaternion.identity,
-                __instance.RoleChancesSettings.transform);
+                roleMenu.RoleChancesSettings.transform);
             categoryHeaderEditRole2.SetHeader(StringNames.ImpostorRolesHeader, 20);
             categoryHeaderEditRole2.transform.localPosition = new Vector3(4.986f, num, -2f);
             num -= 0.522f;
             foreach (var t in list2)
             {
-                __instance.CreateQuotaOption(t, ref num, num3);
+                roleMenu.CreateQuotaOption(t, ref num, num3);
                 num3++;
             }
 
-            return false;
+            Info($"Created {num3} role options for the default game.");
+            yield break;
         }
 
         ScrollerNum = 0.522f;
 
-        __instance.AllButton.transform.parent.gameObject.SetActive(false);
-        __instance.AllButton.gameObject.SetActive(false);
-        __instance.scrollBar.transform.localPosition = new Vector3(-1.4957f, 1.5261f, -4);
+        roleMenu.AllButton.transform.parent.gameObject.SetActive(false);
+        roleMenu.AllButton.gameObject.SetActive(false);
+        roleMenu.scrollBar.transform.localPosition = new Vector3(-1.4957f, 1.5261f, -4);
         maskBg.localPosition = new Vector3(1.5353f, -1.0607f, -.1f);
         maskBg.localScale = new Vector3(6.6811f, 4.1563f, 0.5598f);
         hitbox.localPosition = new Vector3(0.3297f, -.6333f, 4f);
@@ -155,7 +174,8 @@ internal static class RoleSettingMenuPatches
 
         if (roleGroups is null)
         {
-            return false;
+            Error("No role groups found for the selected mod.");
+            yield break;
         }
 
         // sort the groups by priority
@@ -163,8 +183,10 @@ internal static class RoleSettingMenuPatches
             .OrderBy(x => x.Key.Priority)
             .ThenBy(x => x.Key.Name);
 
-        var quotaThing = __instance.categoryHeaderEditRoleOrigin.transform.FindChild("QuotaHeader");
-        var template = __instance.transform.parent.parent.GetComponent<GameSettingMenu>().GameSettingsTab.categoryHeaderOrigin;
+        var quotaThing = roleMenu.categoryHeaderEditRoleOrigin.transform.FindChild("QuotaHeader");
+        var usingNewQuota = false;
+        var template = roleMenu.transform.parent.parent.GetComponent<GameSettingMenu>().GameSettingsTab
+            .categoryHeaderOrigin;
 
         foreach (var grouping in sortedRoleGroups)
         {
@@ -188,7 +210,7 @@ internal static class RoleSettingMenuPatches
                 template,
                 Vector3.zero,
                 Quaternion.identity,
-                __instance.RoleChancesSettings.transform);
+                roleMenu.RoleChancesSettings.transform);
 
             categoryHeaderMasked.SetHeader(name, 20);
 
@@ -202,12 +224,17 @@ internal static class RoleSettingMenuPatches
             var countText = quotaInst.transform.FindChild("# Text");
             countText.transform.localPosition = new Vector3(1.9f, 0.0993f, 0f);
 
-            var blankLabel = quotaInst.transform.FindChild("BlankLabel").gameObject;
-            var chanceLabel = quotaInst.transform.FindChild("Chance Label").gameObject;
-            var countLabel = quotaInst.transform.FindChild("# Label").gameObject;
-            blankLabel.Destroy();
-            chanceLabel.Destroy();
-            countLabel.Destroy();
+            if (!usingNewQuota)
+            {
+                var blankLabel = quotaInst.transform.FindChild("BlankLabel").gameObject;
+                var chanceLabel = quotaInst.transform.FindChild("Chance Label").gameObject;
+                var countLabel = quotaInst.transform.FindChild("# Label").gameObject;
+                blankLabel.Destroy();
+                chanceLabel.Destroy();
+                countLabel.Destroy();
+                usingNewQuota = true;
+                quotaThing = quotaInst;
+            }
 
             categoryHeaderMasked.Background.sprite = MiraAssets.CategoryHeader.LoadAsset();
             categoryHeaderMasked.Background.sprite.texture.filterMode = FilterMode.Bilinear;
@@ -226,19 +253,23 @@ internal static class RoleSettingMenuPatches
                     categoryHeaderMasked.Background.color = Palette.ImpostorRoleHeaderRed;
                     break;
                 default:
-                    categoryHeaderMasked.Title.color = group.Color.Equals(MiraApiPlugin.DefaultHeaderColor) ? Color.white : group.Color.FindAlternateColor();
+                    categoryHeaderMasked.Title.color = group.Color.Equals(MiraApiPlugin.DefaultHeaderColor)
+                        ? Color.white
+                        : group.Color.FindAlternateColor();
                     categoryHeaderMasked.Divider.color = group.Color;
                     categoryHeaderMasked.Background.color = group.Color;
                     break;
             }
 
-            categoryHeaderMasked.Title.fontStyle = __instance.categoryHeaderEditRoleOrigin.Title.fontStyle;
-            categoryHeaderMasked.Title.font = __instance.categoryHeaderEditRoleOrigin.Title.font;
-            categoryHeaderMasked.Title.fontMaterial = __instance.categoryHeaderEditRoleOrigin.Title.fontMaterial;
+            categoryHeaderMasked.Title.fontStyle = roleMenu.categoryHeaderEditRoleOrigin.Title.fontStyle;
+            categoryHeaderMasked.Title.font = roleMenu.categoryHeaderEditRoleOrigin.Title.font;
+            categoryHeaderMasked.Title.fontMaterial = roleMenu.categoryHeaderEditRoleOrigin.Title.fontMaterial;
 
             categoryHeaderMasked.Divider.color = categoryHeaderMasked.Background.color;
             categoryHeaderMasked.Background.transform.localPosition = new Vector3(0.55f, -0.1833f, 0);
-            categoryHeaderMasked.Background.size = new Vector2(categoryHeaderMasked.Background.size.x + 1.5f, categoryHeaderMasked.Background.size.y);
+            categoryHeaderMasked.Background.size = new Vector2(
+                categoryHeaderMasked.Background.size.x + 1.5f,
+                categoryHeaderMasked.Background.size.y);
 
             categoryHeaderMasked.transform.localScale = Vector3.one * 0.63f;
             categoryHeaderMasked.transform.localPosition = new Vector3(-0.44f, ScrollerNum, -2f);
@@ -258,20 +289,21 @@ internal static class RoleSettingMenuPatches
 
             if (!RoleGroupHidden[group])
             {
-                foreach (var role in grouping)
-                {
-                    if (role is not RoleBehaviour roleBehaviour)
+                yield return
+                    grouping.CoLoopWithBudget(role =>
                     {
-                        continue;
-                    }
+                        if (role is not RoleBehaviour roleBehaviour)
+                        {
+                            return;
+                        }
 
-                    var option = CreateQuotaOption(__instance, roleBehaviour, num4);
-                    if (option is not null)
-                    {
-                        RoleOptionSettings.Add(option);
-                        num4++;
-                    }
-                }
+                        var option = CreateQuotaOption(roleMenu, roleBehaviour, num4);
+                        if (option is not null)
+                        {
+                            RoleOptionSettings.Add(option);
+                            num4++;
+                        }
+                    });
             }
 
             var boxCol = categoryHeaderMasked.gameObject.AddComponent<BoxCollider2D>();
@@ -279,29 +311,41 @@ internal static class RoleSettingMenuPatches
             boxCol.offset = new Vector2(1.5f, -0.3f);
 
             var headerBtn = categoryHeaderMasked.gameObject.AddComponent<PassiveButton>();
-            headerBtn.ClickSound = __instance.BackButton.GetComponent<PassiveButton>().ClickSound;
+            headerBtn.ClickSound = roleMenu.BackButton.GetComponent<PassiveButton>().ClickSound;
             headerBtn.OnMouseOver = new UnityEvent();
             headerBtn.OnMouseOut = new UnityEvent();
             headerBtn.OnClick.AddListener(
                 (UnityAction)(() =>
                 {
-                    RolePositions[GameSettingMenuPatches.SelectedModIdx] = __instance.scrollBar.Inner.localPosition;
+                    RolePositions[GameSettingMenuPatches.SelectedModIdx] = roleMenu.scrollBar.Inner.localPosition;
                     if (RoleGroupHidden.TryGetValue(group, out var groupHidden))
                     {
                         RoleGroupHidden[group] = !groupHidden;
                     }
-                    foreach (var header in Headers)
+
+                    foreach (var obj in Headers)
                     {
-                        header.Destroy();
+                        if (!obj)
+                        {
+                            continue;
+                        }
+
+                        obj.Destroy();
                     }
+
                     Headers.Clear();
-                    foreach (var option in RoleOptionSettings)
+                    foreach (var obj in RoleOptionSettings)
                     {
-                        option.gameObject.Destroy();
+                        if (!obj)
+                        {
+                            continue;
+                        }
+
+                        obj.gameObject.Destroy();
                     }
 
                     RoleOptionSettings.Clear();
-                    __instance.SetQuotaTab();
+                    roleMenu.SetQuotaTab();
                 }));
             headerBtn.SetButtonEnableState(true);
 
@@ -311,7 +355,22 @@ internal static class RoleSettingMenuPatches
             }
         }
 
-        __instance.scrollBar.SetScrollBounds(__instance);
+        roleMenu.scrollBar.SetScrollBounds(roleMenu);
+        _quotaTabCoroutine = null;
+    }
+
+    private static Coroutine? _quotaTabCoroutine;
+
+    [HarmonyPrefix]
+    [HarmonyPatch(nameof(RolesSettingsMenu.SetQuotaTab))]
+    public static bool SetQuotaTabPatch(RolesSettingsMenu __instance)
+    {
+        if (_quotaTabCoroutine != null)
+        {
+            GameSettingMenu.Instance.StopCoroutine(_quotaTabCoroutine);
+        }
+
+        _quotaTabCoroutine = GameSettingMenu.Instance.StartCoroutine(CoQuotaTabPatch(__instance).WrapToIl2Cpp());
         return false;
     }
 
@@ -336,6 +395,7 @@ internal static class RoleSettingMenuPatches
     }
 
     [HarmonyPrefix]
+    // TODO: turn this into a fixed update
     [HarmonyPatch(nameof(RolesSettingsMenu.Update))]
     public static bool UpdatePatch(RolesSettingsMenu __instance)
     {
@@ -409,8 +469,7 @@ internal static class RoleSettingMenuPatches
             roleSetting.Role.StringName,
             roleSetting.RoleMaxCount,
             roleSetting.RoleChance,
-            roleSetting.Role.TeamType,
-            false);
+            roleSetting.Role.TeamType);
 
         if (AmongUsClient.Instance.AmHost)
         {
@@ -424,7 +483,7 @@ internal static class RoleSettingMenuPatches
     {
         foreach (var optBehaviour in __instance.AdvancedRolesSettings.GetComponentsInChildren<OptionBehaviour>())
         {
-            optBehaviour.gameObject.DestroyImmediate();
+            optBehaviour.gameObject.Destroy();
         }
 
         CurrentRole = role;
@@ -435,8 +494,6 @@ internal static class RoleSettingMenuPatches
             .Where(x => x.GroupVisible() && x.OptionableType == role.GetType())
             .SelectMany(x => x.Options)
             .ToList() ?? [];
-
-        CurrentRoleOptions = filteredOptions;
 
         foreach (var option in filteredOptions)
         {
@@ -468,6 +525,7 @@ internal static class RoleSettingMenuPatches
             newOpt.Initialize();
         }
 
+        CurrentRoleOptions = filteredOptions;
         __instance.scrollBar.ScrollToTop();
     }
 
@@ -620,7 +678,7 @@ internal static class RoleSettingMenuPatches
             var newButton = Object.Instantiate(roleOptionSetting.buttons[0], roleOptionSetting.transform);
             newButton.name = "ConfigButton";
             newButton.transform.localPosition = new Vector3(0.4473f, -0.3f, -2f);
-            newButton.transform.FindChild("Text_TMP").gameObject.DestroyImmediate();
+            newButton.transform.FindChild("Text_TMP").gameObject.Destroy();
             newButton.activeSprites.Destroy();
 
             var btnRend = newButton.transform.FindChild("ButtonSprite").GetComponent<SpriteRenderer>();

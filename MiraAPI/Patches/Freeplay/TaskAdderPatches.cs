@@ -72,13 +72,13 @@ public static class TaskAdderPatches
         __instance.TaskParent = inner.transform;
         var crewmateFolder = __instance.Root.SubFolders.ToArray().FirstOrDefault(x => x.FolderName == CrewmateName)!;
         var impostorFolder = __instance.Root.SubFolders.ToArray().FirstOrDefault(x => x.FolderName == ImpostorName)!;
-        //var neutralFolder = __instance.CreateFolder("Neutral", __instance.Root, 2, Color.gray);
+        // var neutralFolder = __instance.CreateFolder("Neutral", __instance.Root, 2, Color.gray);
         var modifiersFolder = __instance.CreateFolder(ModifiersName, __instance.Root, 0, Color.blue);
 
         folders.Clear();
         folders.Add(crewmateFolder.FolderName, crewmateFolder);
         folders.Add(impostorFolder.FolderName, impostorFolder);
-        //folders.Add("Neutrals", neutralFolder);
+        // folders.Add("Neutrals", neutralFolder);
         folders.Add(ModifiersName, modifiersFolder);
 
         int folderIdx = 2;
@@ -254,6 +254,12 @@ public static class TaskAdderPatches
         .ToArray()
         .Any(x => x.FolderName == child.FolderName);
 
+    [HarmonyPostfix]
+    [HarmonyPatch(nameof(TaskAdderGame.OnDisable))]
+    public static void ClosePatch()
+    {
+        Utilities.Extensions.ClearGarbageCollector();
+    }
     // yes it might be crazy patching the entire method, but i tried so many other methods and only this works :cry:
     // true -chip
     [HarmonyPrefix]
@@ -276,7 +282,7 @@ public static class TaskAdderPatches
             __instance.transform.FindChild("TitleText_TMP")?.gameObject.DestroyImmediate();
         }
 
-        __instance.ActiveItems.ToArray().Do(x => x.gameObject.Destroy());
+        __instance.ActiveItems.ToArray().Do(x => x.gameObject.DeepDestroy(false));
         __instance.ActiveItems.Clear();
 
         float num = 0f;

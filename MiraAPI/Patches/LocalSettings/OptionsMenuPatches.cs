@@ -3,7 +3,6 @@ using System.Linq;
 using HarmonyLib;
 using MiraAPI.LocalSettings;
 using MiraAPI.Utilities.Assets;
-using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using UnityEngine;
 using UnityEngine.Events;
@@ -22,7 +21,7 @@ public static class OptionsMenuPatches
     private static Dictionary<int, List<GameObject>> tabButtons = new();
 
     /// <summary>
-    /// Creates the tabs and their content.
+    /// Creates the <see cref="LocalSettingsTab"/>s and their content.
     /// </summary>
     [HarmonyPostfix]
     [HarmonyPatch(nameof(OptionsMenuBehaviour.Start))]

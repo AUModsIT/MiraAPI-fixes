@@ -15,7 +15,7 @@ using Object = UnityEngine.Object;
 namespace MiraAPI.Patches;
 
 /// <summary>
-/// General patches for the HudManager class.
+/// General patches for the <see cref="HudManager"/> class.
 /// </summary>
 [HarmonyPatch(typeof(HudManager))]
 public static class HudManagerPatches
@@ -47,7 +47,12 @@ public static class HudManagerPatches
         {
             foreach (var aspect in baseButtons.GetComponentsInChildren<AspectPosition>(true))
             {
-                if (aspect.gameObject == null)
+                if (!aspect.gameObject)
+                {
+                    continue;
+                }
+
+                if (aspect.gameObject.transform.parent.name == "TopRight")
                 {
                     continue;
                 }
@@ -65,7 +70,7 @@ public static class HudManagerPatches
 
         foreach (var button in HudManager.Instance.GetComponentsInChildren<ActionButton>(true))
         {
-            if (button.gameObject == null)
+            if (!button.gameObject)
             {
                 continue;
             }
@@ -110,7 +115,7 @@ public static class HudManagerPatches
     /// <summary>
     /// Create custom buttons and arrange them on the hud.
     /// </summary>
-    /// <param name="__instance">The HudManager instance.</param>
+    /// <param name="__instance">The <see cref="HudManager"/> instance.</param>
     [HarmonyPostfix]
     [HarmonyPatch(nameof(HudManager.Start))]
     public static void StartPostfix(HudManager __instance)
@@ -134,6 +139,7 @@ public static class HudManagerPatches
         {
             t.gameObject.Destroy();
         }
+        Utilities.Extensions.ClearGarbageCollector();
 
         var gridArrange = BottomLeft.GetComponent<GridArrange>();
         var aspectPosition = BottomLeft.GetComponent<AspectPosition>();
@@ -227,9 +233,9 @@ public static class HudManagerPatches
     /// <summary>
     /// Set the custom buttons active when the hud is active.
     /// </summary>
-    /// <param name="__instance">HudManager instance.</param>
-    /// <param name="localPlayer">The local PlayerControl.</param>
-    /// <param name="role">The player's RoleBehaviour.</param>
+    /// <param name="__instance"><see cref="HudManager"/> instance.</param>
+    /// <param name="localPlayer">The local <see cref="PlayerControl"/>.</param>
+    /// <param name="role">The player's <see cref="RoleBehaviour"/>.</param>
     /// <param name="isActive">Whether the Hud should be set active or not.</param>
     [HarmonyPostfix]
     [HarmonyPatch(nameof(HudManager.SetHudActive), typeof(PlayerControl), typeof(RoleBehaviour), typeof(bool))]

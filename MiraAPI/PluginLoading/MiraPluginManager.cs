@@ -34,10 +34,12 @@ namespace MiraAPI.PluginLoading;
 public sealed class MiraPluginManager
 {
     private readonly Dictionary<Assembly, MiraPluginInfo> _registeredPlugins = [];
-    private readonly Dictionary<Assembly, MiraPluginInfo> _configurablePlugins = [];
 
     internal MiraPluginInfo[] RegisteredPlugins { get; private set; } = null!;
-    internal MiraPluginInfo[] ConfigurablePlugins { get; private set; } = null!;
+
+    private readonly Dictionary<Assembly, MiraPluginInfo> _registeredOptionablePlugins = [];
+
+    internal MiraPluginInfo[] RegisteredOptionablePlugins { get; private set; } = null!;
 
     internal Dictionary<MiraPluginInfo, List<Type>> QueuedRoleRegistrations { get; } = [];
     internal static MiraPluginManager Instance { get; private set; } = new();
@@ -238,9 +240,9 @@ public sealed class MiraPluginManager
             QueuedRoleRegistrations.Add(info, roles);
 
             _registeredPlugins.Add(assembly, info);
-            if (miraPlugin.ShowInSettings)
+            if (miraPlugin.DisplayOnOptionsMenu)
             {
-                _configurablePlugins.Add(assembly, info);
+                _registeredOptionablePlugins.Add(assembly, info);
             }
 
             info.SavePublicCollections();
@@ -256,7 +258,7 @@ public sealed class MiraPluginManager
 
             // Cache all the registered plugins into an array for easy access
             RegisteredPlugins = [.. _registeredPlugins.Values];
-            ConfigurablePlugins = [.. _configurablePlugins.Values];
+            RegisteredOptionablePlugins = [.. _registeredOptionablePlugins.Values];
 
             ModifierManager.Modifiers = new ReadOnlyCollection<BaseModifier>(ModifierManager.InternalModifiers);
 
@@ -284,7 +286,7 @@ public sealed class MiraPluginManager
     /// Get a mira plugin by its GUID.
     /// </summary>
     /// <param name="pluginId">The plugin GUID.</param>
-    /// <returns>A MiraPluginInfo.</returns>
+    /// <returns>A <see cref="MiraPluginInfo"/>.</returns>
     public static MiraPluginInfo? GetPluginByGuid(string pluginId)
     {
         return Instance._registeredPlugins.Values.FirstOrDefault(plugin => plugin.PluginId == pluginId);
