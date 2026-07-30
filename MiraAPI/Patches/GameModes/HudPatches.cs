@@ -1,27 +1,35 @@
+using System.Collections;
 using HarmonyLib;
+using Il2CppSystem;
 using MiraAPI.GameModes;
+using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MiraAPI.Patches.GameModes;
 
 [HarmonyPatch(typeof(HudManager))]
 internal static class HudPatches
 {
-    [HarmonyPostfix, HarmonyPatch(nameof(HudManager.Start))]
-    public static void HudStartPatch(HudManager __instance) => CustomGameModeManager.ActiveMode?.HudStart(__instance);
-
     [HarmonyPostfix, HarmonyPatch(nameof(HudManager.Update))]
-    public static void HudUpdatePatch(HudManager __instance) => CustomGameModeManager.ActiveMode?.HudUpdate(__instance);
+    public static void HudUpdatePatch(HudManager __instance) => CustomGameModeManager.ActiveMode.HudUpdate(__instance);
+
 
     [HarmonyPatch(typeof(HudManager), nameof(HudManager.Start))]
     [HarmonyPostfix]
     public static void PostHudStart(HudManager __instance)
     {
+        Coroutines.Start(CoPostHudStart(__instance));
+    }
+
+    private static IEnumerator CoPostHudStart(HudManager instance)
+    {
+        yield return new WaitUntil((Func<bool>)(() => GameManager.Instance != null));
         if (GameManager.Instance.IsHideAndSeek())
-            return;
-        var infoPane = __instance.gameObject.transform.FindChild("LobbyInfoPane");
+            yield return null;
+        var infoPane = instance.gameObject.transform.FindChild("LobbyInfoPane");
         var aspect = infoPane.gameObject.transform.Find("AspectSize");
         var modeLabel = aspect!.Find("ModeLabel");
         var modeValue = aspect.Find("ModeValue");
@@ -35,6 +43,7 @@ internal static class HudPatches
         modelText.SetActive(false);
         _text = gmTextClone.GetComponent<TextMeshPro>();
         _text.text = CustomGameModeManager.ActiveMode != null ? $"<color=#{CustomGameModeManager.ActiveMode.Color.ToHtmlStringRGBA()}>{CustomGameModeManager.ActiveMode.Name}</color>" : "Classic";
+        CustomGameModeManager.ActiveMode?.HudStart(instance);
     }
 
     private static TextMeshPro? _text;

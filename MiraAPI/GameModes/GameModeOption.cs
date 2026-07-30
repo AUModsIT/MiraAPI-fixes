@@ -30,8 +30,7 @@ public static class GameModeOption
 {
     /// <summary>
     /// Gets or Sets the current index of the Game Mode Option
-    /// For the value as an AbstractGameMode, see CustomGameModeManager.ActiveMode
-    /// For the value as an AbstractGameMode, see CustomGameModeManager.ActiveMode.
+    /// For the value as an <see cref="AbstractGameMode"/>, see <see cref="CustomGameModeManager.ActiveMode"/>.
     /// </summary>
     public static int Value
     {
@@ -71,6 +70,7 @@ public static class GameModeOption
     private static readonly List<OptionBehaviour> BaseOptions = new();
     private static readonly List<CategoryHeaderMasked> ModeCategories = new();
     private static readonly List<OptionBehaviour> ModeOptions = new();
+
     [HarmonyPatch(typeof(GameOptionsMenu), nameof(GameOptionsMenu.CreateSettings))]
     [HarmonyPostfix]
     private static void CreateSettingsPatch(GameOptionsMenu __instance)
@@ -126,20 +126,17 @@ public static class GameModeOption
         setting.Title = GamemodeName;
         setting.Index = _lastValue;
         Set(_lastValue);
-        __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
         setting.Values = new Il2CppStructArray<StringNames>([Values[0]]);
         OptionBehaviour.SetUpFromData(setting, 20);
         OptionBehaviour.TitleText.fontSize = 3;
         OptionBehaviour.OnValueChanged = (Action<OptionBehaviour>) ((OptionBehaviour opt) =>
         {
-            _lastValue = opt.GetInt();
             Set(opt.GetInt());
-            __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
             foreach (var player in PlayerControl.AllPlayerControls)
             {
-                if (player == PlayerControl.LocalPlayer)
+                if (player.AmOwner)
                     continue;
-                Rpc<GameModeOptionUpdateRpc>.Instance.SendTo(player.OwnerId, _lastValue);
+                Rpc<GameModeOptionUpdateRpc>.Instance.SendTo(PlayerControl.LocalPlayer, player.OwnerId, _lastValue);
             }
         });
         foreach (var optionBehaviour in __instance.Children.ToArray().Skip(1))
@@ -151,14 +148,14 @@ public static class GameModeOption
         BaseOptions.Add(OptionBehaviour);
         for (var i = 1; i < Values.Count; i++)
             OptionBehaviour.Values = (Il2CppStructArray<StringNames>)OptionBehaviour.Values.Add(Values.ElementAt(i).Value);
-        __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
+        __instance.RefreshOptions(CustomGameModeManager.ActiveMode!);
     }
 
     private static void Set(int val)
     {
         _lastValue = val;
         CustomGameModeManager.SetGameMode((uint)_lastValue);
-        HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).Name);
+        HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).ColoredName);
         // could make Values a dict of AbstractGameMode too
     }
 
@@ -291,7 +288,6 @@ public static class GameModeOption
         foreach (var newOpt in options)
         {
             newOpt.SetClickMask(menu.ButtonClickMask);
-
             SpriteRenderer[] componentsInChildren = newOpt.GetComponentsInChildren<SpriteRenderer>(true);
             foreach (var renderer in componentsInChildren)
             {
@@ -425,7 +421,7 @@ public static class GameModeOption
     [RegisterCustomRpc((uint)MiraRpc.SyncGamemodeOption)]
     private sealed class GameModeOptionUpdateRpc(MiraApiPlugin plugin, uint id) : PlayerCustomRpc<MiraApiPlugin, int>(plugin, id)
     {
-        public override RpcLocalHandling LocalHandling => RpcLocalHandling.Before;
+        public override RpcLocalHandling LocalHandling => RpcLocalHandling.None;
         public override void Write(MessageWriter writer, int data)
         {
             writer.Write(data);
@@ -438,7 +434,7 @@ public static class GameModeOption
 
         public override void Handle(PlayerControl innerNetObject, int data)
         {
-            Value = data;
+            Set(data);
         }
     }
 }

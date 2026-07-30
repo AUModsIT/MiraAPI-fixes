@@ -352,7 +352,7 @@ internal static class GameSettingMenuPatches
 
         _modifierBtnOgPos = _modifiersButton.transform.localPosition;
 
-        foreach (var plugin in MiraPluginManager.Instance.ConfigurablePlugins)
+        foreach (var plugin in MiraPluginManager.Instance.RegisteredOptionablePlugins)
         {
             PresetManager.LoadPresets(plugin);
         }
