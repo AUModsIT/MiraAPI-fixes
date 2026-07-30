@@ -29,7 +29,7 @@ namespace MiraAPI.GameModes;
 public static class GameModeOption
 {
     /// <summary>
-    /// Gets or Sets the current index of the Game Mode Option
+    /// Gets the current index of the Game Mode Option
     /// For the value as an <see cref="AbstractGameMode"/>, see <see cref="CustomGameModeManager.ActiveMode"/>.
     /// </summary>
     public static int Value
@@ -38,7 +38,7 @@ public static class GameModeOption
             OptionBehaviour != null
                 ? OptionBehaviour.GetInt()
                 : _lastValue;
-        set
+        private set
         {
             _lastValue = value;
             if (OptionBehaviour == null)
@@ -131,13 +131,7 @@ public static class GameModeOption
         OptionBehaviour.TitleText.fontSize = 3;
         OptionBehaviour.OnValueChanged = (Action<OptionBehaviour>) ((OptionBehaviour opt) =>
         {
-            Set(opt.GetInt());
-            foreach (var player in PlayerControl.AllPlayerControls)
-            {
-                if (player.AmOwner)
-                    continue;
-                Rpc<GameModeOptionUpdateRpc>.Instance.SendTo(PlayerControl.LocalPlayer, player.OwnerId, _lastValue);
-            }
+            RpcSyncGamemode(PlayerControl.LocalPlayer, opt.GetInt());
         });
         foreach (var optionBehaviour in __instance.Children.ToArray().Skip(1))
         {
@@ -151,9 +145,9 @@ public static class GameModeOption
         __instance.RefreshOptions(CustomGameModeManager.ActiveMode!);
     }
 
-    private static void Set(int val)
+    public static void Set(int val)
     {
-        _lastValue = val;
+        Value = val;
         CustomGameModeManager.SetGameMode((uint)_lastValue);
         HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).ColoredName);
         // could make Values a dict of AbstractGameMode too
@@ -418,23 +412,9 @@ public static class GameModeOption
         headerBtn.SetButtonEnableState(true);
     }
 
-    [RegisterCustomRpc((uint)MiraRpc.SyncGamemodeOption)]
-    private sealed class GameModeOptionUpdateRpc(MiraApiPlugin plugin, uint id) : PlayerCustomRpc<MiraApiPlugin, int>(plugin, id)
+    [MethodRpc((uint) MiraRpc.SyncGamemodeOption)]
+    private static void RpcSyncGamemode(PlayerControl host, int data)
     {
-        public override RpcLocalHandling LocalHandling => RpcLocalHandling.None;
-        public override void Write(MessageWriter writer, int data)
-        {
-            writer.Write(data);
-        }
-
-        public override int Read(MessageReader reader)
-        {
-            return reader.ReadInt32();
-        }
-
-        public override void Handle(PlayerControl innerNetObject, int data)
-        {
-            Set(data);
-        }
+        Set(data);
     }
 }

@@ -96,8 +96,7 @@ public static class CustomGameModeManager
         }
         else if (id != 0)
         {
-            ActiveMode = IdToModeMap[0];
-            GameModeOption.Value = 0;
+            GameModeOption.Set(0);
             Logger<MiraApiPlugin>.Warning($"Unable to find game mode of id {id}!");
         }
     }
