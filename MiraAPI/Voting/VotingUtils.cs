@@ -5,7 +5,6 @@ using MiraAPI.Events.Vanilla.Meeting.Voting;
 using MiraAPI.Networking;
 using MiraAPI.Utilities;
 using Reactor.Networking.Attributes;
-using Reactor.Utilities;
 
 namespace MiraAPI.Voting;
 
@@ -206,6 +205,9 @@ public static class VotingUtils
         {
             return;
         }
+
+        // If modified, these will visually change.
+        votes = @event.Votes;
 
         MeetingHud.Instance.TitleText.text =
             TranslationController.Instance.GetString(

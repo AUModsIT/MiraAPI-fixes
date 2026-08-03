@@ -6,7 +6,6 @@ using MiraAPI.Modifiers.Types;
 using MiraAPI.PluginLoading;
 using MiraAPI.Roles;
 using MiraAPI.Utilities;
-using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using Random = System.Random;
 
@@ -153,7 +152,7 @@ public static class ModifierManager
                 }
 
                 var candidates = availablePlayers
-                    .Where(x => IsGameModifierValid(x, modifier, modifier.TypeId))
+                    .Where(x => IsGameModifierPostCheck(x, modifier, modifier.TypeId))
                     .ToList();
 
                 if (candidates.Count == 0)
@@ -179,7 +178,12 @@ public static class ModifierManager
     private static bool IsGameModifierValid(PlayerControl player, GameModifier modifier, uint modifierId)
     {
         return (player.Data.Role is not ICustomRole role || role.IsModifierApplicable(modifier)) &&
-               modifier.IsModifierValidOn(player.Data.Role) && !player.HasModifier(modifierId) &&
+               !player.HasModifier(modifierId) && modifier.IsModifierValidOn(player.Data.Role) &&
                modifier.CanSpawnOnCurrentMode();
+    }
+    private static bool IsGameModifierPostCheck(PlayerControl player, GameModifier modifier, uint modifierId)
+    {
+        return (player.Data.Role is not ICustomRole role || role.IsModifierApplicable(modifier)) &&
+               !player.HasModifier(modifierId) && modifier.IsModifierValidOnPostCheck(player.Data.Role);
     }
 }
