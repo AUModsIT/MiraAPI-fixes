@@ -58,7 +58,7 @@ public class MenuState(IntPtr cppPtr) : MonoBehaviour(cppPtr)
         { MenuCategory.CustomTwo, [] },
     };
 
-    internal Dictionary<int, bool> FinishedRoleMenus = [];
+    internal Dictionary<int, bool> FinishedRoleMenus { get; } = [];
 
     public void Awake()
     {
