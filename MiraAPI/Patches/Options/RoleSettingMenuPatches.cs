@@ -381,12 +381,21 @@ public static class RoleSettingMenuPatches
         }
     }
 
-    private static void SetScrollBounds(this Scroller scroller, RolesSettingsMenu roleMenu)
+    private static void SetScrollBounds(this Scroller scroller, RolesSettingsMenu roleMenu, bool isRolesConfig = false)
     {
         if (MenuState.Instance.CurrentModIdx == 0)
         {
             scroller.CalculateAndSetYBounds(roleMenu.roleChances.Count + 3, 1f, 6f, 0.43f);
             return;
+        }
+
+        if (isRolesConfig)
+        {
+            scroller.Inner = roleMenu.AdvancedRolesSettings.transform;
+        }
+        else
+        {
+            scroller.Inner = MenuState.Instance.CurrentContainer.transform;
         }
 
         scroller.SetYBoundsMax(-ScrollerNum - 2);
@@ -402,7 +411,6 @@ public static class RoleSettingMenuPatches
 
         var hasImage = CurrentRole.RoleScreenshot != null;
         var num = hasImage ? -0.872f : -1;
-
         foreach (var opt in CurrentRoleOptions)
         {
             if (opt.OptionBehaviour == null) continue;
@@ -616,6 +624,7 @@ public static class RoleSettingMenuPatches
 
         __instance.RoleChancesSettings.SetActive(false);
         __instance.AdvancedRolesSettings.SetActive(true);
+        __instance.scrollBar.SetScrollBounds(__instance, true);
         __instance.RefreshChildren();
     }
 
