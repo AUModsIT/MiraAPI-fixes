@@ -5,6 +5,7 @@ using System.Linq;
 using AmongUs.GameOptions;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
 using HarmonyLib;
+using MiraAPI.GameModes;
 using MiraAPI.GameOptions;
 using MiraAPI.Networking;
 using MiraAPI.Roles;
@@ -175,8 +176,7 @@ public static class RoleSettingMenuPatches
 
                     foreach (var grouping in sortedRoleGroups)
                     {
-                        if (!grouping.Any() ||
-                            grouping.All(x => x.Configuration.HideSettings || !x.VisibleInSettings()))
+                        if (!grouping.Any() || grouping.All(x=> x.Configuration.HideSettings || !x.VisibleInSettings() || x.Configuration.AssociatedGameMode != CustomGameModeManager.ActiveMode?.GetType()))
                         {
                             continue;
                         }

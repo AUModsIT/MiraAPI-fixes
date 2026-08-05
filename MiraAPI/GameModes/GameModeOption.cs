@@ -75,7 +75,7 @@ public static class GameModeOption
     [HarmonyPostfix]
     private static void CreateSettingsPatch(GameOptionsMenu __instance)
     {
-        if (GameSettingMenuPatches.SelectedModIdx != 0 || GameManager.Instance.IsHideAndSeek() || CustomGameModeManager.ActiveMode == null)
+        if (MenuState.Instance.CurrentModIdx != 0 || GameManager.Instance.IsHideAndSeek() || CustomGameModeManager.ActiveMode == null)
         {
             return;
         }
