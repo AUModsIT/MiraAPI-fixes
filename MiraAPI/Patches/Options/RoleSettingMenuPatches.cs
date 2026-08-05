@@ -369,7 +369,10 @@ public static class RoleSettingMenuPatches
             if (controllerSelected)
             {
                 ControllerManager.Instance.CurrentUiState.SelectableUiElements = __instance.ControllerSelectable;
-                ControllerManager.Instance.SetDefaultSelection(__instance.roleChances[0].ControllerSelectable[0]);
+                if (__instance.ControllerSelectable.Count != 0)
+                {
+                    ControllerManager.Instance.SetDefaultSelection(__instance.ControllerSelectable[0]);
+                }
             }
             var passiveButton = __instance.currentTabButton;
             if (passiveButton)
