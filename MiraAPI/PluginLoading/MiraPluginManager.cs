@@ -19,6 +19,7 @@ using MiraAPI.Keybinds;
 using MiraAPI.LocalSettings;
 using MiraAPI.LocalSettings.Attributes;
 using MiraAPI.Modifiers;
+using MiraAPI.Patches.Options;
 using MiraAPI.Presets;
 using MiraAPI.Roles;
 using MiraAPI.Utilities;
@@ -36,10 +37,7 @@ public sealed class MiraPluginManager
     private readonly Dictionary<Assembly, MiraPluginInfo> _registeredPlugins = [];
 
     internal MiraPluginInfo[] RegisteredPlugins { get; private set; } = null!;
-
-    private readonly Dictionary<Assembly, MiraPluginInfo> _registeredOptionablePlugins = [];
-
-    internal MiraPluginInfo[] RegisteredOptionablePlugins { get; private set; } = null!;
+    internal MiraPluginInfo[] RegisteredPluginsWithOptions { get; private set; } = null!;
 
     internal Dictionary<MiraPluginInfo, List<Type>> QueuedRoleRegistrations { get; } = [];
     internal static MiraPluginManager Instance { get; private set; } = new();
@@ -240,10 +238,6 @@ public sealed class MiraPluginManager
             QueuedRoleRegistrations.Add(info, roles);
 
             _registeredPlugins.Add(assembly, info);
-            if (miraPlugin.DisplayOnOptionsMenu)
-            {
-                _registeredOptionablePlugins.Add(assembly, info);
-            }
 
             info.SavePublicCollections();
             PresetManager.CreateDefaultPreset(info);
@@ -258,7 +252,7 @@ public sealed class MiraPluginManager
 
             // Cache all the registered plugins into an array for easy access
             RegisteredPlugins = [.. _registeredPlugins.Values];
-            RegisteredOptionablePlugins = [.. _registeredOptionablePlugins.Values];
+            RegisteredPluginsWithOptions = [.. RegisteredPlugins.Where(m => m.MiraPlugin.DisplayOnOptionsMenu)];
 
             ModifierManager.Modifiers = new ReadOnlyCollection<BaseModifier>(ModifierManager.InternalModifiers);
 

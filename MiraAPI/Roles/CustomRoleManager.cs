@@ -141,7 +141,11 @@ public static class CustomRoleManager
         roleBehaviour.CanVent = customRole.Configuration.CanUseVent || customRole.Configuration.GetsVentData;
         roleBehaviour.DefaultGhostRole = customRole.Configuration.GhostRole;
         roleBehaviour.MaxCount = customRole.Configuration.MaxRoleCount;
-        roleBehaviour.RoleScreenshot = customRole.Configuration.OptionsScreenshot?.LoadAsset();
+        roleBehaviour.RoleScreenshot = Sprite.Create(
+            customRole.Configuration.OptionsScreenshot?.LoadAsset().texture,
+            new Rect(0, 0, 370, 230),
+            Vector2.one / 2,
+            100);
 
         _emptySettings ??= new(0);
         _emptyKillAnimations ??= new(0);
