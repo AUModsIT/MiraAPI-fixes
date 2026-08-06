@@ -23,7 +23,7 @@ using Object = UnityEngine.Object;
 namespace MiraAPI.Patches.Options;
 
 [HarmonyPatch(typeof(RolesSettingsMenu))]
-internal static class RoleSettingMenuPatches
+public static class RoleSettingMenuPatches
 {
     private static Dictionary<RoleOptionsGroup, bool> RoleGroupHidden { get; set; } = [];
 
