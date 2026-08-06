@@ -46,16 +46,16 @@ public static class CustomGameModeManager
     }
 
     /// <summary>
-    /// Checks to see if the classic game mode is on.
+    /// Checks to see if the current game mode is an instance of the classic mode.
     /// </summary>
     /// <returns>True if the classic mode is the current one.</returns>
-    public static bool IsClassic() => IsActiveGameMode<ClassicMode>();
+    public static bool IsClassic() => ActiveMode != null && ActiveMode.GetType().IsAssignableTo(typeof(ClassicMode));
 
     /// <summary>
-    /// Checks to see if the HNS game mode is on.
+    /// Checks to see if the current game mode is an instance of the HNS mode.
     /// </summary>
     /// <returns>True if the Hide & Seek mode is the current one.</returns>
-    public static bool IsHideNSeek() => IsActiveGameMode<HideAndSeekMode>();
+    public static bool IsHideNSeek() => ActiveMode != null && ActiveMode.GetType().IsAssignableTo(typeof(HideAndSeekMode));
 
     /// <summary>
     /// Checks if a provided GameMode is the current active one.
