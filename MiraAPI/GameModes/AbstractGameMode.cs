@@ -31,7 +31,7 @@ public abstract class AbstractGameMode : IOptionable
     /// <summary>
     /// Gets the colored game mode name, using the color and name properties.
     /// </summary>
-    public string ColoredName => $"<color=#{Color.ToHtmlStringRGBA()}>{Name}</color>";
+    public string ColoredName => $"<color=#{this.Color.ToHtmlStringRGBA()}>{this.Name}</color>";
 
     /// <summary>
     /// Gets the game mode id.
@@ -42,11 +42,6 @@ public abstract class AbstractGameMode : IOptionable
     /// Gets a value indicating whether a specific body type is used by the game mode.
     /// </summary>
     public virtual bool GameModeBodyTypeOverride => false;
-
-    /// <summary>
-    /// Gets a value indicating whether the gamemode is based on Hide n Seek.
-    /// </summary>
-    public virtual bool IsHideAndSeek => false;
 
     /// <summary>
     /// Gets a value indicating whether the gamemode removes the normal game settings.

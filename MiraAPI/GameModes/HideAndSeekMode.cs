@@ -33,7 +33,6 @@ public class HideAndSeekMode : AbstractGameMode
     public override bool ShouldShowSabotageMap(MapBehaviour map) => false;
     public override bool ShowGameModeIntroCutscene => true;
     public override bool GameModeBodyTypeOverride => true;
-    public override bool IsHideAndSeek => true;
     public override bool ShowNormalGameSettings => false;
     
     public static int ImpostorPlayerID()

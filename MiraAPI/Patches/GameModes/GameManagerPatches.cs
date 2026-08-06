@@ -22,7 +22,7 @@ internal static class GameManagerPatches
     {
         if (CustomGameModeManager.ActiveMode != null)
         {
-            __result = CustomGameModeManager.ActiveMode.IsHideAndSeek;
+            __result = CustomGameModeManager.ActiveMode is HideAndSeekMode;
             return false;
         }
 
