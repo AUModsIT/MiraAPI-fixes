@@ -25,7 +25,7 @@ public static class CustomRoleUtils
     {
         if (role is ICustomRole custom)
         {
-            return custom.CanSpawnOnCurrentMode() && custom.Configuration.AssociatedGameMode == CustomGameModeManager.ActiveMode?.GetType();
+            return custom.CanSpawnOnCurrentMode() && custom.Configuration.AssociatedGameMode.IsInstanceOfType(CustomGameModeManager.ActiveMode);
         }
 
         if (CustomGameModeManager.ActiveMode is HideAndSeekMode)
