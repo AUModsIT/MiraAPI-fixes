@@ -379,12 +379,12 @@ public class MenuState(IntPtr cppPtr) : MonoBehaviour(cppPtr)
         // Update mod text
         if (CurrentModIdx == 0)
         {
-            _text.text = $"<size=40%>(Page 0/{ModCount})</size>\nMain";
+            _text.text = $"<size=40%>(Page 1/{ModCount + 1})</size>\nMain";
         }
         else
         {
-            var modName = CurrentMod.PluginInfo.Metadata.Name;
-            _text.text = $"<size=50%>(Page {CurrentModIdx}/{ModCount})</size>\n" +
+            var modName = CurrentMod.MiraPlugin.OptionsTitleText;
+            _text.text = $"<size=40%>(Page {CurrentModIdx + 1}/{ModCount + 1})</size>\n" +
                          modName[..Math.Min(modName.Length, 25)];
         }
 
