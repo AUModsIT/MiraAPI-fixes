@@ -14,7 +14,11 @@ namespace MiraAPI.Patches.GameModes;
 internal static class HudPatches
 {
     [HarmonyPostfix, HarmonyPatch(nameof(HudManager.Update))]
-    public static void HudUpdatePatch(HudManager __instance) => CustomGameModeManager.ActiveMode.HudUpdate(__instance);
+    public static void HudUpdatePatch(HudManager __instance)
+    {
+        if (GameManager.Instance != null && GameManager.Instance.GameHasStarted)
+            CustomGameModeManager.ActiveMode?.HudUpdate(__instance);
+    }
 
 
     [HarmonyPatch(typeof(HudManager), nameof(HudManager.Start))]

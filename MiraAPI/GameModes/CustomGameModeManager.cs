@@ -88,19 +88,6 @@ public static class CustomGameModeManager
         LastId++;
     }
 
-    internal static void SetGameMode(uint id)
-    {
-        if (IdToModeMap.TryGetValue(id, out var mode))
-        {
-            ActiveMode = mode;
-        }
-        else if (id != 0)
-        {
-            GameModeOption.Set(0);
-            Logger<MiraApiPlugin>.Warning($"Unable to find game mode of id {id}!");
-        }
-    }
-
     internal static void GetAndSetGameMode()
     {
         var id = (uint)GameModeOption.Value;

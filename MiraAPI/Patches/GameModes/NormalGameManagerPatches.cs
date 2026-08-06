@@ -7,14 +7,11 @@ namespace MiraAPI.Patches.GameModes;
 internal static class NormalGameManagerPatches
 {
     [HarmonyPrefix, HarmonyPatch(nameof(NormalGameManager.IsNormal))]
-    public static bool IsNormal(ref bool __result)
+    public static void IsNormal(ref bool __result)
     {
         if (CustomGameModeManager.ActiveMode != null)
         {
             __result = !CustomGameModeManager.ActiveMode.IsHideAndSeek;
-            return false;
         }
-
-        return true;
     }
 }

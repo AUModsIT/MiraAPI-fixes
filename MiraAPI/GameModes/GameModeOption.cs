@@ -61,12 +61,6 @@ public static class GameModeOption
             Values.Add(mode.ID, CustomStringName.CreateAndRegister(mode.ColoredName));
     }
 
-    private static readonly List<CategoryHeaderMasked> VanillaCategories = new();
-    private static readonly List<OptionBehaviour> VanillaOptions = new();
-    private static readonly List<CategoryHeaderMasked> BaseCategories = new();
-    private static readonly List<OptionBehaviour> BaseOptions = new();
-    private static readonly List<CategoryHeaderMasked> ModeCategories = new();
-    private static readonly List<OptionBehaviour> ModeOptions = new();
 
     private static GameOptionsMenu? _instance;
 
@@ -82,12 +76,6 @@ public static class GameModeOption
 
         var num = 0.713f;
 
-        ModeCategories.Clear();
-        ModeOptions.Clear();
-        VanillaCategories.Clear();
-        VanillaOptions.Clear();
-        BaseCategories.Clear();
-        BaseOptions.Clear();
         foreach (var category in __instance.settingsContainer.GetComponentsInChildren<CategoryHeaderMasked>())
         {
             if (category)
@@ -95,19 +83,6 @@ public static class GameModeOption
         }
 
         var showOpts = CustomGameModeManager.ActiveMode.ShowNormalGameSettings;
-
-        var newList = __instance.Children.ToArray();
-        BaseOptions.Add(newList[0]);
-        foreach (var obj in newList.Skip(1))
-        {
-            VanillaOptions.Add(obj);
-            obj.gameObject.SetActive(showOpts);
-        }
-        foreach (var category in __instance.settingsContainer.GetComponentsInChildren<CategoryHeaderMasked>())
-        {
-            VanillaCategories.Add(category);
-            category.gameObject.SetActive(showOpts);
-        }
 
         CategoryHeaderMasked categoryHeaderMasked = Object.Instantiate(__instance.categoryHeaderOrigin, Vector3.zero, Quaternion.identity, __instance.settingsContainer);
         categoryHeaderMasked.SetHeader(CustomName, 20);
@@ -125,17 +100,15 @@ public static class GameModeOption
         setting.Type = OptionTypes.MultipleChoice;
         setting.Title = GamemodeName;
         setting.Index = _lastValue;
-        Set(_lastValue);
         setting.Values = new Il2CppStructArray<StringNames>([Values[0]]);
         OptionBehaviour.SetUpFromData(setting, 20);
+        Set(_lastValue);
         OptionBehaviour.TitleText.fontSize = 3;
         foreach (var optionBehaviour in __instance.Children.ToArray().Skip(1))
         {
             optionBehaviour.gameObject.transform.localPosition -= new Vector3(0, 1.3f, 0);
         }
         __instance.Children.Add(OptionBehaviour);
-        BaseCategories.Add(categoryHeaderMasked);
-        BaseOptions.Add(OptionBehaviour);
         for (var i = 1; i < Values.Count; i++)
             OptionBehaviour.Values = (Il2CppStructArray<StringNames>)OptionBehaviour.Values.Add(Values.ElementAt(i).Value);
         __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
@@ -144,7 +117,7 @@ public static class GameModeOption
     public static void Set(int val)
     {
         Value = val;
-        CustomGameModeManager.SetGameMode((uint)_lastValue);
+        CustomGameModeManager.GetAndSetGameMode();
         HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).ColoredName);
         // could make Values a dict of AbstractGameMode too
         if (_instance != null)
@@ -153,70 +126,7 @@ public static class GameModeOption
 
     private static void RefreshOptions(this GameOptionsMenu instance, AbstractGameMode mode)
     {
-        foreach (var option in ModeOptions)
-        {
-            option.gameObject.Destroy();
-        }
-        foreach (var header in ModeCategories)
-        {
-            header.gameObject.Destroy();
-        }
-        ModeOptions.Clear();
-        ModeCategories.Clear();
-        instance.Children.Clear();
-        foreach (var group in BaseOptions)
-        {
-            instance.Children.Add(group);
-        }
-
-        var showOpts = mode.ShowNormalGameSettings;
-        var num = 0.713f - (0.63f * BaseCategories.Count) - (0.45f * BaseOptions.Count);
-        foreach (var category in VanillaCategories)
-        {
-            category.gameObject.SetActive(showOpts);
-        }
-        var filteredGroups =
-            ModdedOptionsManager.GameModeOptionGroups
-                .Where(x => x.Key == mode.GetType()).Select(y => y.Value).SelectMany(y => y) ?? [];
-
-        var optionGroups = filteredGroups.ToList();
-        var abstractOptionGroups = filteredGroups as AbstractOptionGroup[] ?? optionGroups.ToArray();
-        foreach (var group in abstractOptionGroups)
-        {
-            CreateGroup(instance, group);
-        }
-        if (showOpts)
-        {
-            foreach (var obj in VanillaOptions)
-            {
-                obj.gameObject.SetActive(true);
-                instance.Children.Add(obj);
-            }
-            num -= 0.63f * VanillaCategories.Count;
-            num -= 0.45f * VanillaOptions.Count;
-        }
-        else
-        {
-            foreach (var obj in VanillaOptions)
-            {
-                obj.gameObject.SetActive(false);
-            }
-        }
-
-        if (optionGroups.Count != 0)
-        {
-            num += 0.225f;
-            foreach (var group in optionGroups)
-            {
-                GameOptionsMenuPatch.UpdateGroup(group, ref num);
-            }
-        }
-        instance.ControllerSelectable.Clear();
-        foreach (var obj in instance.scrollBar.GetComponentsInChildren<UiElement>())
-        {
-            instance.ControllerSelectable.Add(obj);
-        }
-        instance.scrollBar.SetYBoundsMax(-num - 1.65f);
+        
     }
 
     [HarmonyPatch(typeof(GameOptionsMenu), nameof(GameOptionsMenu.ValueChanged))]
@@ -273,7 +183,6 @@ public static class GameModeOption
             menu.stringOptionOrigin,
             menu.playerOptionOrigin,
             menu.settingsContainer));
-        ModeCategories.Add(categoryHeaderMasked);
 
         /*OptionPreset? defaultPreset = null;
         if (GameSettingMenuPatches.SelectedMod != null && PresetManager.DefaultPresets.TryGetValue(
@@ -393,7 +302,6 @@ public static class GameModeOption
 
             newOpt.Initialize();
             newOpt.gameObject.SetActive(false);
-            ModeOptions.Add(newOpt);
         }
 
         var boxCol = categoryHeaderMasked.gameObject.AddComponent<BoxCollider2D>();
