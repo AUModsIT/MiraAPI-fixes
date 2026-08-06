@@ -177,7 +177,7 @@ public static class RoleSettingMenuPatches
                     foreach (var grouping in sortedRoleGroups)
                     {
                         if (!grouping.Any() ||
-                            grouping.All(x=> x.Configuration.HideSettings || !x.VisibleInSettings() || x.Configuration.AssociatedGameMode != CustomGameModeManager.ActiveMode?.GetType()))
+                            grouping.All(x=> x.Configuration.HideSettings || !x.VisibleInSettings() || !x.Configuration.AssociatedGameMode.IsInstanceOfType(CustomGameModeManager.ActiveMode)))
                         {
                             continue;
                         }

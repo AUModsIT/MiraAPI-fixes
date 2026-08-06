@@ -81,9 +81,6 @@ public static class GameModeOption
             if (category)
                 category.gameObject.transform.localPosition -= new Vector3(0, 1.3f, 0);
         }
-
-        var showOpts = CustomGameModeManager.ActiveMode.ShowNormalGameSettings;
-
         CategoryHeaderMasked categoryHeaderMasked = Object.Instantiate(__instance.categoryHeaderOrigin, Vector3.zero, Quaternion.identity, __instance.settingsContainer);
         categoryHeaderMasked.SetHeader(CustomName, 20);
         categoryHeaderMasked.transform.localScale = Vector3.one * 0.63f;
