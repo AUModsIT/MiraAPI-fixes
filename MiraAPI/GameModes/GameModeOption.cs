@@ -68,10 +68,13 @@ public static class GameModeOption
     private static readonly List<CategoryHeaderMasked> ModeCategories = new();
     private static readonly List<OptionBehaviour> ModeOptions = new();
 
+    private static GameOptionsMenu? _instance;
+
     [HarmonyPatch(typeof(GameOptionsMenu), nameof(GameOptionsMenu.CreateSettings))]
     [HarmonyPostfix]
     private static void CreateSettingsPatch(GameOptionsMenu __instance)
     {
+        _instance = __instance;
         if (MenuState.Instance.CurrentModIdx != 0 || GameManager.Instance.IsHideAndSeek() || CustomGameModeManager.ActiveMode == null)
         {
             return;
@@ -135,7 +138,7 @@ public static class GameModeOption
         BaseOptions.Add(OptionBehaviour);
         for (var i = 1; i < Values.Count; i++)
             OptionBehaviour.Values = (Il2CppStructArray<StringNames>)OptionBehaviour.Values.Add(Values.ElementAt(i).Value);
-        __instance.RefreshOptions(CustomGameModeManager.ActiveMode!);
+        __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
     }
 
     public static void Set(int val)
@@ -144,6 +147,8 @@ public static class GameModeOption
         CustomGameModeManager.SetGameMode((uint)_lastValue);
         HudPatches.SetGameModeText(CustomGameModeManager.GetMode(Values.ElementAt(_lastValue).Key).ColoredName);
         // could make Values a dict of AbstractGameMode too
+        if (_instance != null)
+            RefreshOptions(_instance, CustomGameModeManager.ActiveMode!);
     }
 
     private static void RefreshOptions(this GameOptionsMenu instance, AbstractGameMode mode)
