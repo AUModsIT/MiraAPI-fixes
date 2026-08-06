@@ -1,4 +1,5 @@
-﻿using MiraAPI.PluginLoading;
+﻿using MiraAPI.GameModes;
+using MiraAPI.PluginLoading;
 
 namespace MiraAPI.Modifiers.Types;
 
@@ -54,5 +55,5 @@ public abstract class GameModifier : BaseModifier
     /// Determines whether the modifier can spawn in general, accounting for gamemodes and everything else.
     /// </summary>
     /// <returns><see langword="true"/> if the modifier is able to spawn, otherwise <see langword="false"/>.</returns>
-    public virtual bool CanSpawnOnCurrentMode() => !GameManager.Instance.IsHideAndSeek();
+    public virtual bool CanSpawnOnCurrentMode() => CustomGameModeManager.IsClassic() && !GameManager.Instance.IsHideAndSeek();
 }
