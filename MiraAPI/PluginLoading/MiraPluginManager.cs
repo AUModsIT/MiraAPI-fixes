@@ -449,18 +449,13 @@ public sealed class MiraPluginManager
     {
         try
         {
-            if (type.IsAssignableTo(typeof(AbstractGameMode)))
-            {
-                // TODO: bool
-                CustomGameModeManager.RegisterGameMode(type, pluginInfo);
-                return true;
-            }
+            if (typeof(AbstractGameMode).IsAssignableFrom(type))
+                return CustomGameModeManager.RegisterGameMode(type, pluginInfo);
         }
         catch (Exception e)
         {
             Error($"Failed to register gamemode {type.Name}: {e}");
         }
-
         return false;
     }
 

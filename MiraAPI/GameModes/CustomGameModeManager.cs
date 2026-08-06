@@ -21,12 +21,13 @@ public static class CustomGameModeManager
     /// </summary>
     /// <param name="gameModeType">Type of gamemode class, should inherit from <see cref="AbstractGameMode"/>.</param>
     /// <param name="pluginInfo">The custom plugin info of the mod.</param>
-    internal static void RegisterGameMode(Type gameModeType, MiraPluginInfo pluginInfo)
+    /// <returns>Whether the gamemode was successfully registered.</returns>
+    internal static bool RegisterGameMode(Type gameModeType, MiraPluginInfo pluginInfo)
     {
         if (!typeof(AbstractGameMode).IsAssignableFrom(gameModeType))
         {
             Warning($"{gameModeType.Name} does not inherit CustomGameMode!");
-            return;
+            return false;
         }
 
         var instance = Activator.CreateInstance(gameModeType);
@@ -34,13 +35,14 @@ public static class CustomGameModeManager
         if (instance is not AbstractGameMode mode)
         {
             Error($"Failed to create instance of {gameModeType.Name}");
-            return;
+            return false;
         }
 
         IdToModeMap.Add(GetNextId(), mode);
         pluginInfo.GameModes.Add(LastId, mode);
-        GameModeOption.AddOption(mode);
         mode.ID = LastId;
+        GameModeOption.AddOption(mode);
+        return true;
     }
 
     /// <summary>
