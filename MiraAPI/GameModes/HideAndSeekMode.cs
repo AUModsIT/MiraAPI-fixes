@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using AmongUs.GameOptions;
+using HarmonyLib;
 using InnerNet;
 using MiraAPI.GameOptions;
 using MiraAPI.HnsReimplemented.Options;
@@ -34,18 +35,32 @@ public class HideAndSeekMode : AbstractGameMode
     public override bool GameModeBodyTypeOverride => true;
     public override bool IsHideAndSeek => true;
     public override bool ShowNormalGameSettings => false;
+    
+    public static int ImpostorPlayerID()
+    {
+        return OptionGroupSingleton<HnsImpostorOptions>.Instance.SelectedSeeker.Value;
+    }
 
-    /*public override void AssignRoles(out bool runOriginal, LogicRoleSelectionNormal instance)
+    public static bool HasImpostorPlayerID()
+    {
+        return ImpostorPlayerID() > -1;
+    }
+
+    public static bool ValidateImpostorPlayerID(List<NetworkedPlayerInfo> players)
+    {
+        return HasImpostorPlayerID() && players.Find((NetworkedPlayerInfo p) => (int)p.PlayerId == ImpostorPlayerID()) != null;
+    }
+
+    public override void AssignRoles(out bool runOriginal, LogicRoleSelectionNormal instance)
     {
         runOriginal = false;
-        List<ClientData> list = new List<ClientData>();
+        Il2CppSystem.Collections.Generic.List<ClientData> list = new();
         AmongUsClient.Instance.GetAllClients(list);
-        List<NetworkedPlayerInfo> list2 = (from c in list
-            where c.Character != null
-            where c.Character.Data != null
-            where !c.Character.Data.Disconnected && !c.Character.Data.IsDead
-            orderby c.Id
-            select c.Character.Data).ToList<NetworkedPlayerInfo>();
+        List<NetworkedPlayerInfo> list2 = list.ToArray()
+            .Where(c => c.Character != null && c.Character.Data != null && !c.Character.Data.Disconnected &&
+                        !c.Character.Data.IsDead).OrderBy(c => c.Id).Select(c => c.Character.Data)
+            .ToList();
+
         foreach (NetworkedPlayerInfo networkedPlayerInfo in GameData.Instance.AllPlayers)
         {
             if (networkedPlayerInfo.Object != null && networkedPlayerInfo.Object.isDummy)
@@ -55,17 +70,16 @@ public class HideAndSeekMode : AbstractGameMode
         }
         IGameOptions currentGameOptions = GameOptionsManager.Instance.CurrentGameOptions;
         int adjustedNumImpostors = GameOptionsManager.Instance.CurrentGameOptions.GetAdjustedNumImpostors(list2.Count);
-        this.DebugRoleAssignments(list2, ref adjustedNumImpostors);
-        GameManager.Instance.LogicRoleSelection.AssignRolesForTeam(list2, currentGameOptions, RoleTeamTypes.Impostor, adjustedNumImpostors, new RoleTypes?(RoleTypes.Impostor));
-        GameManager.Instance.LogicRoleSelection.AssignRolesForTeam(list2, currentGameOptions, RoleTeamTypes.Crewmate, int.MaxValue, new RoleTypes?(RoleTypes.Crewmate));
+        AssignRolesForTeam(list2, currentGameOptions, RoleTeamTypes.Impostor, adjustedNumImpostors, RoleTypes.Impostor);
+        AssignRolesForTeam(list2, currentGameOptions, RoleTeamTypes.Crewmate, int.MaxValue, RoleTypes.Engineer);
     }
-    public static bool AssignRolesForTeam(
-        LogicRoleSelectionHnS __instance,
+
+    public static void AssignRolesForTeam(
         List<NetworkedPlayerInfo> players,
         IGameOptions opts,
         RoleTeamTypes team,
         int teamMax,
-        Il2CppSystem.Nullable<RoleTypes> defaultRole)
+        RoleTypes defaultRole)
     {
         Error($"MiraAPI.Patches.Roles.LogicRoleSelectionHnsPatch - AssignRolesForTeam: Team: {team}, Max: {teamMax}, Players: {players.Count}, DefaultRole: {defaultRole}");
         int num = 0;
@@ -137,12 +151,12 @@ public class HideAndSeekMode : AbstractGameMode
             Error($"MiraAPI.Patches.Roles.LogicRoleSelectionHnsPatch - AssignRolesForTeam: Before Guaranteed Assignment");
             var newImpostors = new List<NetworkedPlayerInfo>();
             // Specified Seeker
-            if (__instance.hnsManager.LogicOptionsHnS.HasImpostorPlayerID() &&
-                __instance.hnsManager.LogicOptionsHnS.ValidateImpostorPlayerID(players) &&
+            if (HasImpostorPlayerID() &&
+               ValidateImpostorPlayerID(players) &&
                 !AmongUsClient.Instance.IsGamePublic)
             {
                 NetworkedPlayerInfo networkedPlayerInfo = players.ToArray()
-                    .First(p => p.PlayerId == __instance.hnsManager.LogicOptionsHnS.ImpostorPlayerID());
+                    .First(p => p.PlayerId == ImpostorPlayerID());
                 players.Remove(networkedPlayerInfo);
                 newImpostors.Add(networkedPlayerInfo);
                 Error($"MiraAPI.Patches.Roles.LogicRoleSelectionHnsPatch - AssignRolesForTeam: Seeker is {networkedPlayerInfo.PlayerName}, ID: {networkedPlayerInfo.PlayerId}");
@@ -154,7 +168,7 @@ public class HideAndSeekMode : AbstractGameMode
                 while (num2 < teamMax && players.Count > 0)
                 {
                     PseudoRandomList<NetworkedPlayerInfo> pseudoRandomList = new PseudoRandomList<NetworkedPlayerInfo>(AmongUsClient.Instance.GameId);
-                    players._items.Do(x => pseudoRandomList.Add(x));
+                    players.Do(x => pseudoRandomList.Add(x));
                     for (int i = 0; i < GameData.RoundsPlayedInSession; i++)
                     {
                         pseudoRandomList.PickRandom();
@@ -212,7 +226,6 @@ public class HideAndSeekMode : AbstractGameMode
 
             AssignRolesFromList(newImpostors, teamMax, list, ref num);
         }
-        return false;
     }
 
     public static void AssignRolesFromList(List<NetworkedPlayerInfo> players, int teamMax, List<RoleTypes> roleList, ref int rolesAssigned)
@@ -227,7 +240,7 @@ public class HideAndSeekMode : AbstractGameMode
             players.RemoveAt(index2);
             rolesAssigned++;
         }
-    }*/
+    }
 
     public override IEnumerator IntroCutscene(IntroCutscene __instance)
     {

@@ -130,6 +130,14 @@ public abstract class AbstractGameMode : IOptionable
     }
 
     /// <summary>
+    /// Custom role assignment to run after all roles are handed out.
+    /// </summary>
+    /// <param name="instance">Instance of LogicRoleSelection.</param>
+    public virtual void PostAssignRoles(LogicRoleSelectionNormal instance)
+    {
+    }
+
+    /// <summary>
     /// Custom murder logic.
     /// </summary>
     /// <param name="runOriginal">Should the original murder logic be used.</param>
