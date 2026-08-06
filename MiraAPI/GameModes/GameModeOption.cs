@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
-using Hazel;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
-using Il2CppSystem;
 using MiraAPI.GameOptions;
 using MiraAPI.Networking;
 using MiraAPI.Patches.GameModes;
@@ -12,7 +10,6 @@ using MiraAPI.Utilities;
 using MiraAPI.Utilities.Assets;
 using Reactor.Localization.Utilities;
 using Reactor.Networking.Attributes;
-using Reactor.Networking.Rpc;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
@@ -129,10 +126,6 @@ public static class GameModeOption
         setting.Values = new Il2CppStructArray<StringNames>([Values[0]]);
         OptionBehaviour.SetUpFromData(setting, 20);
         OptionBehaviour.TitleText.fontSize = 3;
-        OptionBehaviour.OnValueChanged = (Action<OptionBehaviour>) ((OptionBehaviour opt) =>
-        {
-            RpcSyncGamemode(PlayerControl.LocalPlayer, opt.GetInt());
-        });
         foreach (var optionBehaviour in __instance.Children.ToArray().Skip(1))
         {
             optionBehaviour.gameObject.transform.localPosition -= new Vector3(0, 1.3f, 0);
@@ -225,7 +218,13 @@ public static class GameModeOption
     [HarmonyPrefix]
     private static bool ValueChanged(GameOptionsMenu __instance, OptionBehaviour option)
     {
-        return !OptionBehaviour.Equals(option);
+        if (OptionBehaviour.Equals(option))
+        {
+            Info($"Game mode changed to {option.GetInt()}");
+            RpcSyncGamemode(PlayerControl.LocalPlayer, option.GetInt());
+            return false;
+        }
+        return true;
     }
 
     private static void CreateGroup(GameOptionsMenu menu, AbstractOptionGroup group)
