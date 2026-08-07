@@ -123,7 +123,7 @@ public static class GameModeOption
 
     private static void RefreshOptions(this GameOptionsMenu instance, AbstractGameMode mode)
     {
-        
+        instance.scrollBar.SetYBoundsMax(instance.scrollBar.GetYBounds().max + 1);
     }
 
     [HarmonyPatch(typeof(GameOptionsMenu), nameof(GameOptionsMenu.ValueChanged))]
