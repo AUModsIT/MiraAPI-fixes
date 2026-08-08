@@ -56,7 +56,9 @@ public static class LogicRoleSelectionNormalPatch
             new RoleManager.RoleAssignmentData(
                 role,
                 roleOptions.GetNumPerGame(role.Role),
-                roleOptions.GetChancePerGame(role.Role))).ToList();
+                roleOptions.GetChancePerGame(role.Role)))
+            .Where(x => x.Chance < 100)
+            .ToList();
 
         list.Clear();
         foreach (RoleManager.RoleAssignmentData roleAssignmentData3 in list2)
@@ -81,7 +83,9 @@ public static class LogicRoleSelectionNormalPatch
             // Ignored
         }
 
-        while (list.Count < players.Count && list.Count + num < teamMax)
+        list.Clear();
+        var deficit = teamMax - num;
+        for (var i = 0; i < deficit; i++)
         {
             list.Add(defaultRole2);
         }
