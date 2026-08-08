@@ -111,7 +111,7 @@ public static class GameModeOption
         __instance.RefreshOptions(CustomGameModeManager.ActiveMode);
     }
 
-    public static void Set(int val)
+    private static void Set(int val)
     {
         Value = val;
         CustomGameModeManager.GetAndSetGameMode();
@@ -322,7 +322,7 @@ public static class GameModeOption
     }
 
     [MethodRpc((uint) MiraRpc.SyncGamemodeOption)]
-    private static void RpcSyncGamemode(PlayerControl host, int data)
+    internal static void RpcSyncGamemode(PlayerControl host, int data)
     {
         Set(data);
     }
