@@ -31,6 +31,14 @@ public static class RoleSettingMenuPatches
     private static RoleBehaviour? CurrentRole { get; set; }
     private static List<IModdedOption>? CurrentRoleOptions { get; set; }
 
+    private static readonly Dictionary<int, List<GameObject>> TrackedObjectsByMod = [];
+    private static List<GameObject>? _currentTracked;
+
+    private static void Track(GameObject go)
+    {
+        _currentTracked?.Add(go);
+    }
+
     [HarmonyPostfix]
     [HarmonyPatch(nameof(RolesSettingsMenu.OnEnable))]
     public static void OpenPatch(RolesSettingsMenu __instance)
@@ -42,6 +50,25 @@ public static class RoleSettingMenuPatches
     {
         CurrentRole = null;
         CurrentRoleOptions = null;
+
+        var modIdx = MenuState.Instance.CurrentModIdx;
+        if (TrackedObjectsByMod.TryGetValue(modIdx, out var previouslyTracked))
+        {
+            foreach (var go in previouslyTracked)
+            {
+                if (go != null)
+                {
+                    Object.Destroy(go);
+                }
+            }
+
+            previouslyTracked.Clear();
+            _currentTracked = previouslyTracked;
+        }
+        else
+        {
+            _currentTracked = TrackedObjectsByMod[modIdx] = [];
+        }
 
         roleMenu.QuotaTabSelectables.Clear();
         roleMenu.roleChances.Clear();
@@ -121,6 +148,7 @@ public static class RoleSettingMenuPatches
                     Vector3.zero,
                     Quaternion.identity,
                     roleMenu.RoleChancesSettings.transform);
+                Track(categoryHeaderEditRole.gameObject);
                 categoryHeaderEditRole.SetHeader(StringNames.CrewmateRolesHeader, 20);
                 categoryHeaderEditRole.transform.localPosition = new Vector3(4.986f, num, -2f);
                 num -= 0.522f;
@@ -137,6 +165,7 @@ public static class RoleSettingMenuPatches
                     Vector3.zero,
                     Quaternion.identity,
                     roleMenu.RoleChancesSettings.transform);
+                Track(categoryHeaderEditRole2.gameObject);
                 categoryHeaderEditRole2.SetHeader(StringNames.ImpostorRolesHeader, 20);
                 categoryHeaderEditRole2.transform.localPosition = new Vector3(4.986f, num, -2f);
                 num -= 0.522f;
@@ -197,6 +226,7 @@ public static class RoleSettingMenuPatches
                             Vector3.zero,
                             Quaternion.identity,
                             roleMenu.RoleChancesSettings.transform);
+                        Track(categoryHeaderMasked.gameObject);
 
                         categoryHeaderMasked.SetHeader(name, 20);
 
@@ -645,6 +675,7 @@ public static class RoleSettingMenuPatches
             Vector3.zero,
             Quaternion.identity,
             __instance.RoleChancesSettings.transform);
+        Track(roleOptionSetting.gameObject);
         roleOptionSetting.transform.localPosition = new Vector3(-0.1f, ScrollerNum, -2f);
 
         roleOptionSetting.SetRole(GameOptionsManager.Instance.CurrentGameOptions.RoleOptions, role, 20);
